@@ -5,9 +5,9 @@ This repository has two similar examples that show how your existing Spark code 
 This repository contains two pre-built example spark apps that can run on Apache Spark using CDAP.
 
   - word-count-java: contains word count example written in Java 
-  - sparkpi-scala: contains sparkpi example written in Scala
+  - sparkpi-scala: contains sparkpi example written in Scala [how-to](SCALA-SPARK.md)
 
-Below are the steps to run these standard examples on CDAP.
+Below are the steps to run any of your Spark application in CDAP. We will show how we can run one in detail. 
 
 # How To 
 
@@ -27,9 +27,7 @@ This will generate a regular Spark application that is now ready to be integrate
 
 **Only one minor configuration that needs to be done is to setup your Maven POM or SBT project with Felix to create bundled JAR. The artifact will be slightly bigger, but CDAP handles that seamlessly.**
 
-> [Here]( are the changes you need to do to your POM file
-
-
+> [Here](BUNDLE-JAR.md) are the changes you need to do to your POM file
 
 ## Step 2 - Deploying your Spark application as Plugin to CDAP
 
