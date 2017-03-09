@@ -17,7 +17,7 @@ This section will describe how an exisiting Apache Spark code can be integrate i
 
 Assume, you have a project maven or sbt that you used to build your Apache Spark application. We have one in this repository called ```word-count-java``` that is a maven project and it's a Java Spark application. It's a pure Spark application and has no code introduction coming from CDAP. None of the dependencies of CDAP are introduced, [check here](https://github.com/caskdata/sample-spark-app/blob/develop/word-count-java/src/main/java/com/example/spark/JavaWordCount.java#L1)
 
-So, let's first get to building this project. 
+So, let's first get to building one of the project, but the process is same for the second one.
 
 ```
   cd word-count-java
@@ -76,8 +76,21 @@ Now, we use a JSON configuration (Note you should be able to modify to use a dif
 
 ### Application Template Artifact 
 
-JSON specified 
+Key ```$.artifact``` in the above JSON specifies the CDAP application template into which your Spark application will be embedded into. 
 
+### Application Name
+
+Key ```$.config.plugin``` references your Spark application and provides it a name and version as specified in **Step 2**
+
+### Configurations
+
+Rest of the JSON is specifies the configuration for sending emails in case there is an issue with your Spark Application. You can specify multiple recipents in case there is any issue with your Spark application. 
+
+> At this point you should be able to go to your CDAP UI and see your Spark application.
+
+## Run your Spark application in CDAP
+
+Now, that we have deployed your Spark application, wrapped it with CDAP, it's time to run it. This specific example that we have used for illustration expects arguments [here](https://github.com/caskdata/sample-spark-app/blob/develop/word-count-java/src/main/java/com/example/spark/JavaWordCount.java#L19)
 
 ## Running examples using CDAP
 
