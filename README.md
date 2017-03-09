@@ -20,7 +20,8 @@ Let us assume that you have a maven project for your Apache Spark application. W
 So, let's first build one of this project. The process will be same for any Spark based applications that you would like to run in CDAP.
 
 ```
-  cd word-count-java
+  git clone git@github.com:caskdata/sample-spark-app
+  cd sample-spark-app/word-count-java
   mvn clean package
 ```
 This will generate a regular Spark application that is now ready to be integrated with CDAP. 
