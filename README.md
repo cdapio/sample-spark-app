@@ -17,7 +17,7 @@ This section will describe how an exisiting Apache Spark code can be integrate i
 
 Assume, you have a project maven or sbt that you used to build your Apache Spark application. We have one in this repository called ```word-count-java``` that is a maven project and it's a Java Spark application. It's a pure Spark application and has no code introduction coming from CDAP. None of the dependencies of CDAP are introduced, [check here](https://github.com/caskdata/sample-spark-app/blob/develop/word-count-java/src/main/java/com/example/spark/JavaWordCount.java#L1)
 
-So, let's first get to building one of the project, but the process is same for the second one.
+So, let's first get to building one of the project. The process will be same for any Spark based applications that you would like to run in CDAP.
 
 ```
   cd word-count-java
