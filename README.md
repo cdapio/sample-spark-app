@@ -1,17 +1,17 @@
 # Introduction
 
-This repository has two similar examples that show how your existing Spark code can be configured and deployed seamlessly using CDAP. This capability is added mainly to ensure the previous investment in Spark either doesn't need to be thrown nor restructuring is needed to fit it into CDAP.
+This repository has two  examples that show how your existing Apache Spark applications can be deployed and configured seamlessly using CDAP. 
 
-This repository contains two pre-built example spark apps that can run on Apache Spark using CDAP.
+This capability allows users of CDAP to run their existing Spark application in CDAP without making any modification to the Spark code.
+
+This repository contains two pre-built example spark applications.
 
   - word-count-java: contains word count example written in Java 
   - sparkpi-scala: contains sparkpi example written in Scala [how-to](SCALA-SPARK.md)
 
-Below are the steps to run any of your Spark application in CDAP. We will show how we can run one in detail. 
-
 # How To 
 
-This section will describe how an exisiting Apache Spark code can be integrate into CDAP. So, let us take you through a step-by-step process to get it up and running. We will use the examples in this directory to run through it. 
+This section will describe how an exisiting Apache Spark code can be integrate into CDAP. So, let us take you through a step-by-step process to get it up and running in CDAP. We will use the examples in this directory to run through it. 
 
 ## Step 1 - Building your Spark Application
 
