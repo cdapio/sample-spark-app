@@ -9,73 +9,76 @@ This repository contains two pre-built example spark apps that can run on Apache
 
 Below are the steps to run these standard examples on CDAP.
 
-# Getting Started
+# How To 
 
-## Updates to the `pom.xml`
+This section will describe how an exisiting Apache Spark code can be integrate into CDAP. So, let us take you through a step-by-step process to get it up and running. We will use the examples in this directory to run through it. 
 
-- Changes required to create bundle jar
+## Step 1 - Building your Spark Application
 
-```
-      <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-        <version>2.3.7</version>
-        <extensions>true</extensions>
-        <configuration>
-          <instructions>
-            <Embed-Dependency>*;inline=false;scope=compile</Embed-Dependency>
-            <Embed-Transitive>true</Embed-Transitive>
-            <Embed-Directory>lib</Embed-Directory>
-            <_exportcontent>*</_exportcontent>
-          </instructions>
-        </configuration>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>bundle</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-```
+Assume, you have a project maven or sbt that you used to build your Apache Spark application. We have one in this repository called ```word-count-java``` that is a maven project and it's a Java Spark application. It's a pure Spark application and has no code introduction coming from CDAP. None of the dependencies of CDAP are introduced, [check here](https://github.com/caskdata/sample-spark-app/blob/develop/word-count-java/src/main/java/com/example/spark/JavaWordCount.java#L1)
 
-- Dependencies for `spark-core`, `spark-streaming`, `spark-mllib`, and `spark-sql` are provide by CDAP.
- So if the legacy program is using these dependencies then the `pom.xml` should be updated to
- have `provided` scope for them.
-
-For example:
+So, let's first get to building this project. 
 
 ```
-    <dependency>
-      <groupId>org.apache.spark</groupId>
-      <artifactId>spark-core_2.10</artifactId>
-      <version>1.6.1</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.spark</groupId>
-      <artifactId>spark-streaming_2.10</artifactId>
-      <version>1.6.1</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.spark</groupId>
-      <artifactId>spark-mllib_2.10</artifactId>
-      <version>1.6.1</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-        <groupId>org.apache.spark</groupId>
-        <artifactId>spark-sql_2.10</artifactId>
-      <version>1.6.1</version>
-      <scope>provided</scope>
-    </dependency>
+  cd word-count-java
+  mvn clean package
 ```
-  
+This will generate a regular Spark application that is now ready to be integrated with CDAP. 
+
+## Step 2 - Deploying your Spark application as Plugin to CDAP
+
+Now, this vanilla Spark project is treated as a plugin within CDAP system. So, let's deploy this Spark application using standard REST API's provided by CDAP. 
+
+Deploy `wordcount-1.0.0.jar` in CDAP as a plugin.
+```
+curl -w"\n" -X POST "localhost:11015/v3/namespaces/default/artifacts/word-count-program" \
+   -H 'Artifact-Plugins: [ { "name": "WordCount", "type": "sparkprogram", "className": "com.example.spark.JavaWordCount" }]' \
+   -H "Artifact-Version: 1.0.0" \
+   -H "Artifact-Extends: system:cdap-notifiable-workflow[1.0.0, 1.0.0]" \
+   --data-binary @<path-to-wordcount-1.0.0.jar>
+```
+
+> Note that the Spark application is now turned into a CDAP plugin without you doing anything that will be running within a wrapped CDAP application. ```Artifact-Extends``` header specifies the CDAP application this Spark application will be a plugin for. 
+
+Also, note that in the configuration above you specify the main class name that CDAP should use to invoke the your Spark application. 
+
+## Step 3 - Create a CDAP application
+
+> Note that we haven't changed any bits of your Spark application to wrap this into CDAP.
+
+Now, we use a JSON configuration (Note you should be able to modify to use a different format, if JSON is not your favourite choice) to specify the how the application should be configured. Let's inspect the JSON we have for creating this application
+
+```
+    {
+      "artifact": {
+         "name": "cdap-notifiable-workflow",
+         "version": "1.0.0",
+         "scope": "system"
+      },
+      "config": {
+         "plugin": {
+            "name": "WordCount",
+            "type": "sparkprogram",
+            "artifact": {
+               "name": "word-count-program",
+               "scope": "user",
+               "version": "1.0.0"
+            }
+         },
+
+         "notificationEmailSender": "sender@example.domain.com",
+         "notificationEmailIds": ["recipient@example.domain.com"],
+         "notificationEmailSubject": "[Critical] Workflow execution failed.",
+         "notificationEmailBody": "Execution of Workflow running the WordCount program failed."###
+      }
+    }
+```
+
+### Application Template Artifact 
+
+JSON specified 
+
+
 ## Running examples using CDAP
 
 We will use Notifiable Workflow app(https://github.com/caskdata/cdap-notifiable-workflow-app) to execute
@@ -219,6 +222,74 @@ Notifiable Workflow app in CDAP is 1.0.0.
     ```
 
    - Similar to `WordCountApp`, `NotifiableWorkflow` in `SparkPiApp` can be scheduled to run at a desired interval.
+
+
+
+
+## Updates to the `pom.xml`
+
+- Changes required to create bundle jar
+
+```
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <version>2.3.7</version>
+        <extensions>true</extensions>
+        <configuration>
+          <instructions>
+            <Embed-Dependency>*;inline=false;scope=compile</Embed-Dependency>
+            <Embed-Transitive>true</Embed-Transitive>
+            <Embed-Directory>lib</Embed-Directory>
+            <_exportcontent>*</_exportcontent>
+          </instructions>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>bundle</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+```
+
+- Dependencies for `spark-core`, `spark-streaming`, `spark-mllib`, and `spark-sql` are provide by CDAP.
+ So if the legacy program is using these dependencies then the `pom.xml` should be updated to
+ have `provided` scope for them.
+
+For example:
+
+```
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-core_2.10</artifactId>
+      <version>1.6.1</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-streaming_2.10</artifactId>
+      <version>1.6.1</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-mllib_2.10</artifactId>
+      <version>1.6.1</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-sql_2.10</artifactId>
+      <version>1.6.1</version>
+      <scope>provided</scope>
+    </dependency>
+```
 
 ## Mailing Lists
 
