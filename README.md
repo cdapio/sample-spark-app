@@ -1,31 +1,81 @@
 ## About
-This repo contains two example spark apps that can run on Apache Spark. 
+This repository contains two example spark apps that can run on Apache Spark.
   - word-count-java: contains word count example written in Java 
   - sparkpi-scala: contains sparkpi example written in Scala
 
-Notes below have steps to run these standard examples on directly on Spark and using CDAP without any code change
-  
-  
-## Running examples directly on Spark
+Below are the steps to run these standard examples on CDAP.
 
-1. Word Count
-   - Package 
-   ```
-   cd word-count-java
-   mvn clean package
-   ``` 
-   - Deploy 
-   - Run
-2. Spark Pi
-    - Package 
-    - Deploy 
-    - Run
- 
-## Running examples using CDAP without any code change
+## Updates to the `pom.xml`
 
-We will use Notifiable Workflow app to execute these spark programs. Notifiable Workflow app is
-a pluggable application which can execute any spark programs without requiring any code changes.
-Following steps assume that the deployed version of Notifiable Workflow app in CDAP is 1.0.0
+- Changes required to create bundle jar
+
+```
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <version>2.3.7</version>
+        <extensions>true</extensions>
+        <configuration>
+          <instructions>
+            <Embed-Dependency>*;inline=false;scope=compile</Embed-Dependency>
+            <Embed-Transitive>true</Embed-Transitive>
+            <Embed-Directory>lib</Embed-Directory>
+            <_exportcontent>*</_exportcontent>
+          </instructions>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>bundle</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+```
+
+- Dependencies for `spark-core`, `spark-streaming`, `spark-mllib`, and `spark-sql` are provide by CDAP.
+ So if the legacy program is using these dependencies then the `pom.xml` should be updated to
+ have `provided` scope for them.
+
+For example:
+
+```
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-core_2.10</artifactId>
+      <version>1.6.1</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-streaming_2.10</artifactId>
+      <version>1.6.1</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-mllib_2.10</artifactId>
+      <version>1.6.1</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-sql_2.10</artifactId>
+      <version>1.6.1</version>
+      <scope>provided</scope>
+    </dependency>
+```
+  
+## Running examples using CDAP
+
+We will use Notifiable Workflow app(https://github.com/caskdata/cdap-notifiable-workflow-app) to execute
+these spark programs. Notifiable Workflow app is a pluggable CDAP application which can execute any
+spark programs without requiring any code changes. Following steps assume that the deployed version of
+Notifiable Workflow app in CDAP is 1.0.0.
 
 1. Word Count 
    - Package  
@@ -37,15 +87,15 @@ Following steps assume that the deployed version of Notifiable Workflow app in C
    - Deploy `wordcount-1.0.0.jar` in CDAP as a plugin.
     ```
     curl -w"\n" -X POST "localhost:11015/v3/namespaces/default/artifacts/word-count-program" \
-     -H 'Artifact-Plugins: [ { "name": "WordCount", "type": "sparkprogram", "className": "com.example.spark.JavaWordCount" }]' \
-     -H "Artifact-Version: 1.0.0" \
-     -H "Artifact-Extends: system:cdap-notifiable-workflow[1.0.0, 1.0.0]" \
-     --data-binary @<path-to-wordcount-1.0.0.jar>
+      -H 'Artifact-Plugins: [ { "name": "WordCount", "type": "sparkprogram", "className": "com.example.spark.JavaWordCount" }]' \
+      -H "Artifact-Version: 1.0.0" \
+      -H "Artifact-Extends: system:cdap-notifiable-workflow[1.0.0, 1.0.0]" \
+      --data-binary @<path-to-wordcount-1.0.0.jar>
     ```
 
    - Create a CDAP Application with the plugin just deployed.
     ```
-    curl -v "localhost:11015/v3/namespaces/default/apps/JavaWordCountApp" -X PUT -d @app.json
+    curl -w"\n" "localhost:11015/v3/namespaces/default/apps/WordCountApp" -X PUT -d @app.json
     ```
 
     where app.json contains the configurations which are used to configure the applications.
@@ -75,15 +125,35 @@ Following steps assume that the deployed version of Notifiable Workflow app in C
     }
     ```
 
-    At this point you should see the `JavaWordCountApp` application created in the CDAP UI (`localhost:11011`).
+    At this point `WordCountApp` should be created for you.
 
-   - Run the NotifiableWorkflow program in the JavaWordCountApp through CDAP UI. `main` method of the JavaWordCount
-   spark program expects two arguments, name of the input file and name of the output directory. These arguments
-   can be supplied to the NotifiableWorkflow program in CDAP through program.args option as
+   - Run the `NotifiableWorkflow` program in the `WordCountApp`. `main` method of the `JavaWordCount`
+   spark program expects two arguments, name of the input file and name of the output directory.
+   These arguments can be supplied to the `NotifiableWorkflow` program through `program.args` runtime argument as
    ```
-   program.args = /tmp/input.file /tmp/output.dir
+   curl -w"\n" -X POST "localhost:11015/v3/namespaces/default/apps/WordCountApp/workflows/NotifiableWorkflow/start" \
+   -d '{"program.args": "/data/input.txt /data/output.dir"}'
    ```
-   
+
+   - `NotifiableWorkflow` program can be scheduled to run at desired interval.
+   Following command schedules it to run at every day 4 AM.
+   ```
+   curl -w"\n" -X PUT "localhost:11015/v3/namespaces/default/apps/WordCountApp/schedules/DailySchedule" \
+    -d  '{ "scheduleType": "TIME", "program": { "programName": "NotifiableWorkflow", "programType": "WORKFLOW" }, "properties": {}, "schedule": { "cronExpression": "0 4 * * *", "name": "DailySchedule"} }'
+   ```
+
+   - Verify the schedule is attached to the program by querying the list of schedules.
+   ```
+   curl -w"\n" "localhost:11015/v3/namespaces/default/apps/WordCountApp/workflows/NotifiableWorkflow/schedules"
+   ```
+
+   - Schedule associated with the `NotifiableWorklow` can be easily updated.
+   Following command update the schedule to run it at 10 AM instead.
+   ```
+   curl -w"\n" -X POST "localhost:11015/v3/namespaces/default/apps/WordCountApp/schedules/DailySchedule/update" \
+    -d '{ "scheduleType": "TIME", "program": { "programName": "NotifiableWorkflow", "programType": "WORKFLOW" }, "properties": {}, "schedule": { "cronExpression": "0 10 * * *", "name": "DailySchedule" } }'
+   ```
+
 2. Spark Pi 
    - Package 
     ```
@@ -132,19 +202,18 @@ Following steps assume that the deployed version of Notifiable Workflow app in C
     }
     ```
 
-    At this point you should see the `SparkPiApp` application created in the CDAP UI (`localhost:11011`).
+    At this point `SparkPiApp` application should be created in CDAP.
 
-   - Run the NotifiableWorkflow program in the SparkPiApp through CDAP UI. `main` method of the SparkPi program
-    expects number of slices as an input argument. This argument can be supplied to the NotifiableWorkflow program
-    in CDAP through `program.args` option as
+   - Run the `NotifiableWorkflow` program in the `SparkPiApp`. `main` method of the `SparkPi` program
+    expects number of slices as an input argument. This argument can be supplied to the `NotifiableWorkflow` program
+    through `program.args` runtime argument as
     ```
-    program.args = 3
+    curl -w"\n" -X POST "localhost:11015/v3/namespaces/default/apps/SparkPiApp/workflows/NotifiableWorkflow/start" \
+     -d '{"program.args": "3"}'
     ```
-   
-   
-## References 
-1. Notifiable workflow app https://github.com/caskdata/cdap-notifiable-workflow-app
-      
+
+   - Similar to `WordCountApp`, `NotifiableWorkflow` in `SparkPiApp` can be scheduled to run at a desired interval.
+
 ## Mailing Lists
 
 CDAP User Group and Development Discussions:
