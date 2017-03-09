@@ -110,7 +110,7 @@ Few things to note here
 
 > **We are done, it was quick & easy to integrate your existing application into CDAP.**
 
-## Step 4 - Optional - Working with Schedules - Create, Update & List schedule for your application
+## Optional - Working with Schedules - Create, Update & List schedule for your application
 
 ### Create a Schedule for your Spark application
 
