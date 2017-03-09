@@ -25,7 +25,7 @@ So, let's first get to building one of the project. The process will be same for
 ```
 This will generate a regular Spark application that is now ready to be integrated with CDAP. 
 
-**Only one minor configuration that needs to be done is to setup your Maven POM or SBT project with Felix to create bundled JAR. The artifact will be slightly bigger, but CDAP handles that seamlessly.**
+**One configuration change needs to be done in build system - Maven POM or SBT project to use Felix module to create a bundled JAR. The artifact will be slightly bigger, but CDAP handles that efficiently.**
 
 > [Here](BUNDLE-JAR.md) are the changes you need to do to your POM file
 
