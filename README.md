@@ -145,9 +145,7 @@ curl -w"\n" -X POST "localhost:11015/v3/namespaces/default/apps/WordCountApp/sch
    -d '{ "scheduleType": "TIME", "program": { "programName": "NotifiableWorkflow", "programType": "WORKFLOW" }, "properties": {}, "schedule": { "cronExpression": "0 10 * * *", "name": "DailySchedule" } }'
 ```
 
-Nothing special, the command is very similar to CREATE above with minor difference of URI with ```update``` being appended to the end. 
-
-```localhost:11015/v3/namespaces/default/apps/WordCountApp/schedules/DailySchedule/update```
+Nothing special, the command is very similar to CREATE above with minor difference of URI with ```update``` being appended to the end. ```localhost:11015/v3/namespaces/default/apps/WordCountApp/schedules/DailySchedule/update```
 
 # Mailing Lists
 
