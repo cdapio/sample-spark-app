@@ -15,9 +15,9 @@ This section will describe how an exisiting Apache Spark code can be integrate i
 
 ## Step 1 - Building your Spark Application
 
-Assume, you have a project maven or sbt that you used to build your Apache Spark application. We have one in this repository called ```word-count-java``` that is a maven project and it's a Java Spark application. It's a pure Spark application. None of the dependencies of CDAP are introduced into your application, [check here](https://github.com/caskdata/sample-spark-app/blob/develop/word-count-java/src/main/java/com/example/spark/JavaWordCount.java#L1)
+Let us assume that you have a maven project for your Apache Spark application. We have one in this repository called ```word-count-java``` that is a maven project and it's a Java Spark application. Similar to the once that you might me having in your environment. In these applications none of the dependencies of CDAP are introduced into your application, [check here](https://github.com/caskdata/sample-spark-app/blob/develop/word-count-java/src/main/java/com/example/spark/JavaWordCount.java#L1)
 
-So, let's first get to building one of the project. The process will be same for any Spark based applications that you would like to run in CDAP.
+So, let's first build one of this project. The process will be same for any Spark based applications that you would like to run in CDAP.
 
 ```
   cd word-count-java
@@ -25,30 +25,31 @@ So, let's first get to building one of the project. The process will be same for
 ```
 This will generate a regular Spark application that is now ready to be integrated with CDAP. 
 
-**One configuration change needs to be done in build system - Maven POM to use Felix module to create a bundled JAR. The artifact will be slightly bigger, but CDAP handles that efficiently.**
+**One configuration change needs to be done in the build system, we have to configure maven POM to use Felix module to create a bundled JAR. The artifact will be slightly bigger, but CDAP handles that efficiently.**
 
-> [Here](BUNDLE-JAR.md) are the changes you need to apply to your Maven POM file.
+> Refer to [How-To-Create-Bundle-JAR](BUNDLE-JAR.md) to see what modification need to be done to your POM file. 
 
 ## Step 2 - Deploying your Spark application as Plugin in to CDAP
 
-Now, this vanilla Spark project is treated as a plugin within CDAP. So, let's go ahead and deploy the Spark application using standard REST API's provided by CDAP. 
+Now, with the Spark application that you built in Step 1 can be treated as a plugin within CDAP. So, let's go ahead and deploy the Spark application using standard REST API's provided by CDAP. 
 
 Deploy `wordcount-1.0.0.jar` in CDAP as a plugin.
+
 ```
 curl -w"\n" -X POST "localhost:11015/v3/namespaces/default/artifacts/word-count-program" \
    -H 'Artifact-Plugins: [ { "name": "WordCount", "type": "sparkprogram", "className": "com.example.spark.JavaWordCount" }]' \
    -H "Artifact-Version: 1.0.0" \
    -H "Artifact-Extends: system:cdap-notifiable-workflow[1.0.0, 1.0.0]" \
-   --data-binary @<path-to-wordcount-1.0.0.jar>
+   --data-binary @/PATH/TO/wordcount-1.0.0.jar
 ```
 
-> Note that the Spark application is now turned into a CDAP plugin without doing much. Your Spark application will be running within a wrapped CDAP application as a Plugin. ```Artifact-Extends``` header specifies the CDAP application this Spark application will be a plugin for. 
+> Note that the Spark application is now turned into a CDAP plugin without any modification to your code. Your Spark application will be running within a wrapped CDAP application as a Plugin. ```Artifact-Extends``` header specifies the CDAP application this Spark application will be a plugin for. Also, note that in the configuration above you specify the ```className``` name that CDAP should use to invoke your Spark application. 
 
-Also, note that in the configuration above you specify the main class name that CDAP should use to invoke your Spark application. 
+Make sure you replace ```/PATH/TO/wordcount-1.0.0.jar``` to appropriate JAR and it's path. 
 
 ## Step 3 - Create a CDAP application
 
-> Note that we haven't changed any bits of your Spark application.
+> So far we haven't change a single bit of your Spark application, other than the build configuration.
 
 Now, we use a JSON configuration (Note you should be able to modify to use a different format, if JSON is not your favourite choice) to specify the how the application should be configured. Let's inspect the JSON we have for creating this application
 
