@@ -1,40 +1,46 @@
 # Introduction
 
-This repository has two  examples that show how your existing Apache Spark applications can be deployed and configured seamlessly using CDAP. 
+This guide will demonstrate how to manage and run your existing Apache Spark application in CDAP. This repository has two examples and a step-by-step instructions in achieving this. 
 
-This capability allows users of CDAP to run their existing Spark application in CDAP without making any modification to the Spark code.
+Users will be able to run their existing Spark application in CDAP without making any modifications to the Spark code.
 
-This repository contains two pre-built example spark applications.
+Sample spark examples used in this guide:
 
   - word-count-java: contains word count example written in Java 
-  - sparkpi-scala: contains sparkpi example written in Scala [how-to](SCALA-SPARK.md)
+  - sparkpi-scala: contains sparkpi example written in Scala 
 
-# How To 
+The following instructions are for deploying the word-count-java Spark application. For For deploying sparkpi-scala application, follow the instructions [here](SCALA-SPARK.md). 
 
-This section will describe how an exisiting Apache Spark code can be integrate into CDAP. So, let us take you through a step-by-step process to get it up and running in CDAP. We will use the examples in this directory to run through it. 
+# Summary of steps
 
-## Step 1 - Building your Spark Application
+1. Package Spark application (word-count) as a bundle jar
+2. Deploy the Spark application jar as a CDAP plugin 
+3. Create a CDAP Application using the deployed plugin
+4. Run the application in CDAP   
 
-Let us assume that you have a maven project for your Apache Spark application. We have one in this repository called ```word-count-java``` that is a maven project and it's a Java Spark application. Similar to the once that you might me having in your environment. In these applications none of the dependencies of CDAP are introduced into your application, [check here](https://github.com/caskdata/sample-spark-app/blob/develop/word-count-java/src/main/java/com/example/spark/JavaWordCount.java#L1)
+## Step 1 - Package word-count-java Spark application as a bundle jar
 
-So, let's first build one of this project. The process will be same for any Spark based applications that you would like to run in CDAP.
+In this section the instructions are demonstrated for maven project, the steps are similar for other build tools such as ant or sbt. 
+Please note, in these applications none of the dependencies from CDAP are used and the compiled application jar would work directly on Apache Spark: [check here](https://github.com/caskdata/sample-spark-app/blob/develop/word-count-java/src/main/java/com/example/spark/JavaWordCount.java#L1)
+
+Let's build the Spark word-count-java application.The process will be same for any Spark based application that you would like to run in CDAP.
 
 ```
   git clone git@github.com:caskdata/sample-spark-app
   cd sample-spark-app/word-count-java
   mvn clean package
 ```
-This will generate a regular Spark application that is now ready to be integrated with CDAP. 
+The commands above will generate a Spark application jar that is now ready to be integrated with CDAP. 
 
-**One configuration change needs to be done in the build system, we have to configure maven POM to use Felix module to create a bundled JAR. The artifact will be slightly bigger, but CDAP handles that efficiently.**
+**Note: The packaged jar should have all the dependencies required by the application. The pom.xml uses Felix maven-bundle-plugin to create a bundled JAR with all dependencies**
 
 > Refer to [How-To-Create-Bundle-JAR](BUNDLE-JAR.md) to see what modification need to be done to your POM file. 
 
-## Step 2 - Deploying your Spark application as Plugin in to CDAP
+## Step 2 - Deploy Spark application into CDAP
 
-Now, with the Spark application that you built in Step 1 can be treated as a plugin within CDAP. So, let's go ahead and deploy the Spark application using standard REST API's provided by CDAP. 
+CDAP plugin architecture allows reusing existing code to create new CDAP application. The Spark application built in Step 1 can be deployed as a plugin in CDAP using REST APIs. 
 
-Deploy `wordcount-1.0.0.jar` in CDAP as a plugin.
+Deploy `wordcount-1.0.0.jar` in CDAP as a plugin:
 
 ```
 curl -w"\n" -X POST "localhost:11015/v3/namespaces/default/artifacts/word-count-program" \
@@ -44,15 +50,15 @@ curl -w"\n" -X POST "localhost:11015/v3/namespaces/default/artifacts/word-count-
    --data-binary @/PATH/TO/wordcount-1.0.0.jar
 ```
 
-> Note that the Spark application is now turned into a CDAP plugin without any modification to your code. Your Spark application will be running within a wrapped CDAP application as a Plugin. ```Artifact-Extends``` header specifies the CDAP application this Spark application will be a plugin for. Also, note that in the configuration above you specify the ```className``` name that CDAP should use to invoke your Spark application. 
+> Note that the Spark application is now turned into a CDAP plugin without any modification to the Spark code. ```Artifact-Extends``` header specifies the CDAP application that will run the Spark code. Main class name for the Spark application is specified using the ```className``` parameter. 
 
 Make sure you replace ```/PATH/TO/wordcount-1.0.0.jar``` to appropriate JAR and it's path. 
 
 ## Step 3 - Create a CDAP application
 
-> So far we haven't change a single bit of your Spark application, other than the build configuration.
+CDAP application can be created from the Spark plugin deployed in the previous step using REST API. 
 
-Now, we use a JSON configuration (Note you should be able to modify to use a different format, if JSON is not your favourite choice) to specify the how the application should be configured. Let's inspect the JSON we have for creating this application
+Use the following JSON configuration file ```app.json``` for configuring the CDAP application.
 
 ```
     {
@@ -71,83 +77,77 @@ Now, we use a JSON configuration (Note you should be able to modify to use a dif
                "version": "1.0.0"
             }
          },
-
-         "notificationEmailSender": "sender@example.domain.com",
-         "notificationEmailIds": ["recipient@example.domain.com"],
-         "notificationEmailSubject": "[Critical] Workflow execution failed.",
-         "notificationEmailBody": "Execution of Workflow running the WordCount program failed."###
       }
     }
 ```
 
+REST API to create the CDAP WordCount Application:
+
+```
+curl -v "localhost:11015/v3/namespaces/default/apps/WordCount" -X PUT -d @app.json
+```
+
 ### Application Template Artifact 
 
-Key ```$.artifact``` in the above JSON specifies the CDAP application template into which your Spark application will be embedded into. 
+Key ```artifact``` in the above JSON specifies the CDAP application template into which your Spark application will be embedded into. 
 
 ### Application Name
 
-Key ```$.config.plugin``` references your Spark application and provides it a name and version as specified in **Step 2**
+Key ```config.plugin``` references your Spark application and provides it a name and version as specified in **Step 2**
 
-### Configurations
+> At this point you should be able to go to your CDAP UI and see the WordCount application.
 
-Rest of the JSON is specifies the configuration for sending emails in case there is an issue with your Spark Application. You can specify multiple recipents in case there is any issue with your Spark application. 
+## Step 4 - Run your Spark application in CDAP
 
-> At this point you should be able to go to your CDAP UI and see your Spark application.
+The Spark application can now be run in CDAP. This specific example that we have used for illustration expects two arguments (input file and output directory) as specified [here](https://github.com/caskdata/sample-spark-app/blob/develop/word-count-java/src/main/java/com/example/spark/JavaWordCount.java#L19).
 
-## Run your Spark application in CDAP
-
-Now, that we have deployed your Spark application, wrapped it with CDAP, it's time to run your CDAP application. This specific example that we have used for illustration expects two arguments as specified [here](https://github.com/caskdata/sample-spark-app/blob/develop/word-count-java/src/main/java/com/example/spark/JavaWordCount.java#L19).
-
-Following is the REST you can you use to start the application
+The application can be started using the UI or the REST API:
 ```
-curl -w"\n" -X POST "localhost:11015/v3/namespaces/default/apps/WordCountApp/workflows/NotifiableWorkflow/start" \
+curl -w"\n" -X POST "localhost:11015/v3/namespaces/default/apps/WordCount/workflows/NotifiableWorkflow/start" \
      -d '{"program.args": "/data/input.txt /data/output.dir"}'
 ```
 
-Few things to note here
+The status of the application can be monitored through the UI. Once the Spark application finishes running the output will be available in the output directory specified.
 
-* As the CDAP application template is wrapping it in ```NotifiableWorkflow```, you start the workflow. 
-* You pass the runtime argument as POST body.
-* And because it's a workflow it can scheduled to run periodically based on the set schedule. 
+## Advanced Options
 
-> **We are done, it was quick & easy to integrate your existing application into CDAP.**
+Now that the Spark is running in CDAP, users can leverage the additional capabilities provided by the CDAP platform such as - scheduling, logs, metadata, security and the like. The following section describes scheduling capability. 
 
-## Optional - Working with Schedules - Create, Update & List schedule for your application
+## Working with Schedules - Create, Update, and List schedule for your application
 
 ### Create a Schedule for your Spark application
 
-Following shows how a schedule can be set to trigger a run of your Spark application at 4:00 AM
+Create a daily schedule to trigger a run of your Spark application at 4:00 AM every day using the following REST API:
 
 ```
-curl -w"\n" -X PUT "localhost:11015/v3/namespaces/default/apps/WordCountApp/schedules/DailySchedule" \
+curl -w"\n" -X PUT "localhost:11015/v3/namespaces/default/apps/WordCount/schedules/DailySchedule" \
      -d  '{ "scheduleType": "TIME", "program": { "programName": "NotifiableWorkflow", "programType": "WORKFLOW" }, "properties": {}, "schedule": { "cronExpression": "0 4 * * *", "name": "DailySchedule"} }'
 ```
 
-Few important things to notice, in the POST body, the configuration for the schedule is defined in there. So, let's look deeper into what's being specified as configuration for adding a new schedule.
+The POST body contains the configuration for the schedule to be created. Details are as follows:
 
-* ```scheduleType``` This defines the type of schedule you are attempting to set, there are different kinds supported within CDAP, but, for this application, we only support ```TIME``` based. 
-* ```programName``` Specifies the CDAP Program that wraps your spark application. 
-* ```schedule``` Specifies the [crontab expression](http://www.adminschoice.com/crontab-quick-reference) to schedule and the name of the schedule. If the schedule with the same name is already present, the REST API call will fail. In that case, please use update to modify the schedule parameters. 
+* ```scheduleType``` This defines the type of schedule you are attempting to set. 
+* ```programName``` Specifies the CDAP Program that runs the Spark plugin. 
+* ```schedule``` Specifies the [cron expression](http://www.quartz-scheduler.org/documentation/quartz-2.1.x/tutorials/crontrigger.html) for the schedule and the name of the schedule. 
 
-> Note that you have the ability to specify multiple schedules for your Spark application and each one can be managed indepdently of others. 
+> Note: multiple schedules can be set for the Spark application, and each one can be managed independently of others. 
 
 ### List all schedules associated with your Spark application
 
 Verify the schedule is attached to the program by querying the list of schedules.
+
 ```
-  curl -w"\n" "localhost:11015/v3/namespaces/default/apps/WordCountApp/workflows/NotifiableWorkflow/schedules"
+  curl -w"\n" "localhost:11015/v3/namespaces/default/apps/WordCount/workflows/NotifiableWorkflow/schedules"
 ```
 
 ### Update the schedule
 
-Following updates the existing schedule to run your Spark application it at 10 AM instead of 4:00 AM that we original had when we created the schedule. 
+To change the schedule to run the application at 10:00 AM instead of 4:00 AM, use the following REST API: 
 
 ```
-curl -w"\n" -X POST "localhost:11015/v3/namespaces/default/apps/WordCountApp/schedules/DailySchedule/update" \
+curl -w"\n" -X POST "localhost:11015/v3/namespaces/default/apps/WordCount/schedules/DailySchedule/update" \
    -d '{ "scheduleType": "TIME", "program": { "programName": "NotifiableWorkflow", "programType": "WORKFLOW" }, "properties": {}, "schedule": { "cronExpression": "0 10 * * *", "name": "DailySchedule" } }'
 ```
-
-Nothing special, the command is very similar to CREATE above with minor difference of URI with ```update``` being appended to the end. ```localhost:11015/v3/namespaces/default/apps/WordCountApp/schedules/DailySchedule/update```
 
 # Mailing Lists
 
