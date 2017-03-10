@@ -1,6 +1,6 @@
 # Introduction
 
-This guide will demonstrate how to manage and run your existing Apache Spark application in CDAP. This repository has two examples and a step-by-step instructions in acheiving this. 
+This guide will demonstrate how to manage and run your existing Apache Spark application in CDAP. This repository has two examples and a step-by-step instructions in achieving this. 
 
 Users will be able to run their existing Spark application in CDAP without making any modifications to the Spark code.
 
@@ -9,28 +9,28 @@ Sample spark examples used in this guide:
   - word-count-java: contains word count example written in Java 
   - sparkpi-scala: contains sparkpi example written in Scala 
 
-The following instructions are for deploying the word-count-java Spark application. For deploying Scala Spark app, follow the instructions [here](SCALA-SPARK.md). 
+The following instructions are for deploying the word-count-java Spark application. For For deploying sparkpi-scala application, follow the instructions [here](SCALA-SPARK.md). 
 
 # Summary of steps
 
 1. Package Spark application (word-count) as a bundle jar
 2. Deploy the Spark application jar as a CDAP plugin 
-3. Create a CDAP Application using the Spark plugin
+3. Create a CDAP Application using the deployed plugin
 4. Run the application in CDAP   
 
-## Step 1 - Package your Spark Application
+## Step 1 - Package word-count-java Spark application as a bundle jar
 
 In this section the instructions are demonstrated for maven project, the steps are similar for other build tools such as ant or sbt. 
-are  that you have a maven project for your Apache Spark application. Please note, in these applications none of the dependencies of CDAP are introduced and the compiled application jar would work directly on Apache Spark: [check here](https://github.com/caskdata/sample-spark-app/blob/develop/word-count-java/src/main/java/com/example/spark/JavaWordCount.java#L1)
+Please note, in these applications none of the dependencies from CDAP are used and the compiled application jar would work directly on Apache Spark: [check here](https://github.com/caskdata/sample-spark-app/blob/develop/word-count-java/src/main/java/com/example/spark/JavaWordCount.java#L1)
 
-Let's build the Spark word-count application. The process will be same for any Spark based applications that you would like to run in CDAP.
+Let's build the Spark word-count-java application.The process will be same for any Spark based application that you would like to run in CDAP.
 
 ```
   git clone git@github.com:caskdata/sample-spark-app
   cd sample-spark-app/word-count-java
   mvn clean package
 ```
-The commands above will generate a regular Spark application that is now ready to be integrated with CDAP. 
+The commands above will generate a Spark application jar that is now ready to be integrated with CDAP. 
 
 **Note: The packaged jar should have all the dependencies required by the application. The pom.xml uses Felix maven-bundle-plugin to create a bundled JAR with all dependencies**
 
@@ -50,7 +50,7 @@ curl -w"\n" -X POST "localhost:11015/v3/namespaces/default/artifacts/word-count-
    --data-binary @/PATH/TO/wordcount-1.0.0.jar
 ```
 
-> Note that the Spark application is now turned into a CDAP plugin without any modification to the Spark code. ```Artifact-Extends``` header specifies the CDAP application that will run the Spark code. The driver class name for the Spark application is specified using the ```className``` parameter. 
+> Note that the Spark application is now turned into a CDAP plugin without any modification to the Spark code. ```Artifact-Extends``` header specifies the CDAP application that will run the Spark code. Main class name for the Spark application is specified using the ```className``` parameter. 
 
 Make sure you replace ```/PATH/TO/wordcount-1.0.0.jar``` to appropriate JAR and it's path. 
 
@@ -111,9 +111,9 @@ The status of the application can be monitored through the UI. Once the Spark ap
 
 ## Advanced Options
 
-Now that the Spark program is running as a CDAP Application, users can leverage the additional capabilities provided by the CDAP platform such as - scheduling, logs, metadata, security and the like. The following section describes scheduling capability. 
+Now that the Spark is running in CDAP, users can leverage the additional capabilities provided by the CDAP platform such as - scheduling, logs, metadata, security and the like. The following section describes scheduling capability. 
 
-## Working with Schedules - Create, Update & List schedule for your application
+## Working with Schedules - Create, Update, and List schedule for your application
 
 ### Create a Schedule for your Spark application
 
@@ -124,13 +124,13 @@ curl -w"\n" -X PUT "localhost:11015/v3/namespaces/default/apps/WordCount/schedul
      -d  '{ "scheduleType": "TIME", "program": { "programName": "NotifiableWorkflow", "programType": "WORKFLOW" }, "properties": {}, "schedule": { "cronExpression": "0 4 * * *", "name": "DailySchedule"} }'
 ```
 
-The POST body contains the configuration for the schedule created. Details as follows:
+The POST body contains the configuration for the schedule to be created. Details are as follows:
 
 * ```scheduleType``` This defines the type of schedule you are attempting to set. 
 * ```programName``` Specifies the CDAP Program that runs the Spark plugin. 
-* ```schedule``` Specifies the [cron expression](http://www.adminschoice.com/crontab-quick-reference) for the schedule and the name of the schedule. 
+* ```schedule``` Specifies the [cron expression](http://www.quartz-scheduler.org/documentation/quartz-2.1.x/tutorials/crontrigger.html) for the schedule and the name of the schedule. 
 
-> Note: multiple schedules can be set for the Spark application, and each one can be managed indepdently of others. 
+> Note: multiple schedules can be set for the Spark application, and each one can be managed independently of others. 
 
 ### List all schedules associated with your Spark application
 
