@@ -9,7 +9,7 @@ Sample spark examples used in this guide:
   - word-count-java: contains word count example written in Java 
   - sparkpi-scala: contains sparkpi example written in Scala 
 
-The following instructions are for deploying the word-count-java Spark application. For For deploying sparkpi-scala application, follow the instructions [here](SCALA-SPARK.md). 
+The following instructions are for deploying the word-count-java Spark application. For deploying sparkpi-scala application, follow the instructions [here](SCALA-SPARK.md). 
 
 # Summary of steps
 
