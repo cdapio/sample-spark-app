@@ -40,14 +40,14 @@ where `app.json` contains the configurations which are used to configure the app
     },
     "config": {
       "plugin": {
-      "name": "SparkPi",
-      "type": "sparkprogram",
-      "artifact": {
-        "name": "sparkpi-program",
-        "scope": "user",
-        "version": "1.0.0"
-      }
-    },
+        "name": "SparkPi",
+        "type": "sparkprogram",
+        "artifact": {
+          "name": "sparkpi-program",
+          "scope": "user",
+          "version": "1.0.0"
+        }
+      },
 
       "notificationEmailSender": "sender@example.domain.com",
       "notificationEmailIds": ["recipient@example.domain.com"],

@@ -61,24 +61,29 @@ A CDAP application can be created from the Spark plugin deployed in the previous
 Use this JSON configuration file ```app.json``` for configuring the CDAP application:
 
 ```
-    {
-      "artifact": {
-         "name": "cdap-notifiable-workflow",
-         "version": "1.0.0",
-         "scope": "system"
+  {
+    "artifact": {
+      "name": "cdap-notifiable-workflow",
+      "version": "1.0.0",
+      "scope": "system"
+    },
+    "config": {
+      "plugin": {
+        "name": "WordCount",
+        "type": "sparkprogram",
+        "artifact": {
+          "name": "word-count-program",
+          "scope": "user",
+          "version": "1.0.0"
+        }
       },
-      "config": {
-         "plugin": {
-            "name": "WordCount",
-            "type": "sparkprogram",
-            "artifact": {
-               "name": "word-count-program",
-               "scope": "user",
-               "version": "1.0.0"
-            }
-         },
-      }
+
+      "notificationEmailSender": "sender@example.domain.com",
+      "notificationEmailIds": ["recipient@example.domain.com"],
+      "notificationEmailSubject": "[Critical] Workflow execution failed.",
+      "notificationEmailBody": "Execution of Workflow running the WordCount program failed."
     }
+  }
 ```
 
 RESTful API to create the CDAP WordCount Application:
