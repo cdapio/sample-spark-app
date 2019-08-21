@@ -1,3 +1,6 @@
+# Deprecated
+This way of running existing Spark applications has been removed from newer versions of CDAP. See https://www.youtube.com/watch?v=gDnINRBzg2s.
+
 # Introduction
 
 This guide demonstrates how to manage and run your existing Apache Spark applications in CDAP. This repository has two examples and step-by-step instructions for achieving this. 
